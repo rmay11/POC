@@ -1,6 +1,10 @@
+##!/usr/bin/python3
+# -*- coding: utf-8 -*-
+# @Author : may11
+# @Time : 2023/11/27 18:01
+
 import re
 from queue import Queue
-
 import bs4
 import requests
 import threading
