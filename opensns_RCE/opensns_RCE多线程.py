@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 # @Author : may11
 # @Time : 2023/11/27 18:01
+# @CNVD-2021-34590
 
-import re
+
 from queue import Queue
 import bs4
 import requests
@@ -47,9 +48,6 @@ print("----------漏洞检测开始----------")
 result = set()
 lock = threading.Lock()
 
-# 编译正则表达式
-pattern = re.compile(r'http://((?:\d{1,3}\.){3}\d{1,3}):(\d{1,5})')
-
 
 class MyThread(threading.Thread):
     def __init__(self, queue):
@@ -59,35 +57,31 @@ class MyThread(threading.Thread):
     def run(self):
         while True:
             URL = self.queue.get()
-            match = pattern.search(URL)
-            ip = match.group(1)
-            port = match.group(2)
-            result_1 = f"{ip}:{port}"
+            target=get_URL(URL)
             try:
                 response = requests.get(
-                    url=URL,
+                    url=target,
                     headers=headers
                 )
-                check(result_1, response.text)
+                check(URL, response.text)
             except Exception:
-                print(f'{result_1}不可达！')
+                print(f'{URL}不可达！')
             self.queue.task_done()
 
 
 # 使用with语句创建线程并在结束时调用join方法
-with threading.Lock():
-    queue = Queue()
-    for ip in open("url.txt"):
-        ip = ip.strip()
-        URL = get_URL(ip)
-        queue.put(URL)
 
-    for i in range(5):
-        task = MyThread(queue)
-        task.setDaemon(True)
-        task.start()
+queue = Queue()
+for ip in open("url.txt"):
+    ip = ip.strip()
+    queue.put(ip)
 
-    queue.join()
+for i in range(10):
+    task = MyThread(queue)
+    task.setDaemon(True)
+    task.start()
+
+queue.join()
 
 print("----------漏洞检测结束----------")
 print("----------输出结果如下----------")
